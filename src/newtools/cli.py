@@ -23,6 +23,16 @@ def main() -> None:
         type=_parse_date,
         help="終了日 (YYYY-MM-DD、この日を含む)。省略時は開始日から7日後",
     )
+    parser.add_argument(
+        "--exclude-cancelled",
+        action="store_true",
+        help="キャンセル済みの予定を表示から除外する",
+    )
+    parser.add_argument(
+        "--teams-only",
+        action="store_true",
+        help="Teams会議のみを表示する",
+    )
     args = parser.parse_args()
 
     start = args.start
@@ -31,13 +41,25 @@ def main() -> None:
 
     events = list_events(start, end)
 
+    if args.exclude_cancelled:
+        events = [event for event in events if not event["is_cancelled"]]
+    if args.teams_only:
+        events = [event for event in events if event["is_teams"]]
+
     if not events:
         print("該当する予定はありません。")
         return
 
     for event in events:
-        marker = "[Teams]" if event["is_teams"] else ""
-        print(f"{event['start']} - {event['end']} {marker} {event['subject']}")
+        markers = " ".join(
+            marker
+            for marker, condition in (
+                ("[Teams]", event["is_teams"]),
+                ("[Canceled]", event["is_cancelled"]),
+            )
+            if condition
+        )
+        print(f"{event['start']} - {event['end']} {markers} {event['subject']}")
 
 
 if __name__ == "__main__":

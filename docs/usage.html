@@ -75,6 +75,8 @@ teams-schedule</pre>
   <tr><th>オプション</th><th>説明</th><th>デフォルト</th></tr>
   <tr><td><code>--start YYYY-MM-DD</code></td><td>取得開始日</td><td>本日</td></tr>
   <tr><td><code>--end YYYY-MM-DD</code></td><td>取得終了日（この日を含む）</td><td>開始日から7日後</td></tr>
+  <tr><td><code>--exclude-cancelled</code></td><td>キャンセル済みの予定を除外する</td><td>除外しない</td></tr>
+  <tr><td><code>--teams-only</code></td><td>Teams会議のみを表示する</td><td>すべて表示</td></tr>
 </table>
 
 <h2>実行例</h2>
@@ -82,7 +84,10 @@ teams-schedule</pre>
 teams-schedule
 
 # 期間を指定
-teams-schedule --start 2026-09-01 --end 2026-09-05</pre>
+teams-schedule --start 2026-09-01 --end 2026-09-05
+
+# キャンセル済みを除外し、Teams会議のみ表示
+teams-schedule --exclude-cancelled --teams-only</pre>
 
 <h2>出力例</h2>
 <pre>2026-08-20 15:30 - 2026-08-20 16:30 [Teams] [FY26] M141ホンダ案件関連定例会
