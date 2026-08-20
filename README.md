@@ -14,13 +14,18 @@ pip install -e ".[dev]"
 
 ```
 NEWTOOLS/
-├── pyproject.toml   ← パッケージ定義
-├── README.md        ← このファイル
+├── pyproject.toml       ← パッケージ定義
+├── README.md            ← このファイル
+├── docs/                ← 各ツールの使い方ドキュメント
 ├── src/
-│   └── newtools/    ← ソースコード本体
-├── tests/           ← テストコード
-└── .venv/           ← 仮想環境（Git管理外）
+│   └── newtools/
+│       └── teams_schedule/  ← ツールごとのサブパッケージ
+├── tests/
+│   └── teams_schedule/  ← ツールごとのテスト
+└── .venv/               ← 仮想環境（Git管理外）
 ```
+
+ツールを追加する場合は `src/newtools/<ツール名>/` にサブパッケージを作り、`pyproject.toml` の `[project.scripts]` にエントリポイントを追加する。
 
 ## テスト実行
 

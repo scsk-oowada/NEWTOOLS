@@ -3,7 +3,7 @@
 import argparse
 from datetime import datetime, timedelta
 
-from newtools.outlook_calendar import list_events
+from newtools.teams_schedule.outlook_calendar import list_events
 
 
 def _parse_date(value: str) -> datetime:

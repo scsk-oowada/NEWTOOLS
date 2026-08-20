@@ -14,7 +14,7 @@ dev = [
 ]
 
 [project.scripts]
-teams-schedule = "newtools.cli:main"
+teams-schedule = "newtools.teams_schedule.cli:main"
 
 [build-system]
 requires = ["setuptools>=68.0"]

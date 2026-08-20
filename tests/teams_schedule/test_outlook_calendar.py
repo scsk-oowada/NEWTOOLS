@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from newtools.outlook_calendar import _format_ol_datetime
+from newtools.teams_schedule.outlook_calendar import _format_ol_datetime
 
 
 def test_format_ol_datetime():
