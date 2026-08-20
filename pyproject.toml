@@ -4,12 +4,17 @@ version = "0.1.0"
 description = "新規案件向けツール群"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "pywin32",
+]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
 ]
+
+[project.scripts]
+teams-schedule = "newtools.cli:main"
 
 [build-system]
 requires = ["setuptools>=68.0"]
