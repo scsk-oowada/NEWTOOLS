@@ -27,3 +27,7 @@ NEWTOOLS/
 ```bash
 pytest
 ```
+
+## ツール一覧
+
+- `teams-schedule` — Outlookカレンダーの予定一覧を取得するCLI。使い方は [docs/usage.html](docs/usage.html) を参照。
