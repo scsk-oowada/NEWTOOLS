@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>file-stats 使い方</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+</style>
+</head>
+<body>
+
+<h1>file-stats 使い方</h1>
+
+<h2>概要</h2>
+<p>指定したフォルダ内を再帰的に走査し、拡張子別のファイル数・合計サイズを集計して表示するCLIです。外部サービスとの連携はなく、ローカルのファイルシステムのみを参照します。</p>
+
+<h2>セットアップ（初回のみ）</h2>
+<pre>cd /c/ProgramData/NEWTOOLS
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -e ".[dev]"</pre>
+
+<h2>実行方法</h2>
+<pre>source .venv/Scripts/activate
+file-stats [対象フォルダ]</pre>
+<p><code>対象フォルダ</code> を省略した場合はカレントディレクトリを集計します。</p>
+
+<h2>オプション</h2>
+<table>
+  <tr><th>オプション</th><th>説明</th><th>デフォルト</th></tr>
+  <tr><td><code>path</code>（位置引数）</td><td>集計対象のフォルダ</td><td>カレントディレクトリ</td></tr>
+  <tr><td><code>--top N</code></td><td>合計サイズが大きい上位N件のみ表示する</td><td>全件表示</td></tr>
+</table>
+
+<h2>実行例</h2>
+<pre># カレントディレクトリを集計
+file-stats
+
+# 対象フォルダを指定
+file-stats C:\Users\me\Documents
+
+# 上位5件のみ表示
+file-stats C:\Users\me\Documents --top 5</pre>
+
+<h2>出力例</h2>
+<pre>拡張子              ファイル数       合計サイズ
+.pyc                12      26.3KB
+.py                 10       7.3KB
+.html                1       3.4KB
+.md                  3       2.3KB
+(拡張子なし)          6       1.8KB
+.txt                 5      654.0B</pre>
+<p>合計サイズが大きい拡張子から降順に表示されます。拡張子を持たないファイルは <code>(拡張子なし)</code> としてまとめて集計されます。</p>
+
+<h2>補足</h2>
+<ul>
+  <li>サブフォルダ内のファイルも再帰的に集計対象になります</li>
+  <li>Git Bashで日本語が文字化けする場合は <code>PYTHONIOENCODING=utf-8 file-stats</code> のように環境変数を付けて実行してください</li>
+  <li>テスト実行は <code>pytest tests/file_stats</code></li>
+</ul>
+
+</body>
+</html>
