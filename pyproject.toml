@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "pywin32",
+    "playwright",
 ]
 
 [project.optional-dependencies]
@@ -16,6 +17,7 @@ dev = [
 [project.scripts]
 teams-schedule = "newtools.teams_schedule.cli:main"
 file-stats = "newtools.file_stats.cli:main"
+rizab-summary = "newtools.rizab_summary.cli:main"
 
 [build-system]
 requires = ["setuptools>=68.0"]

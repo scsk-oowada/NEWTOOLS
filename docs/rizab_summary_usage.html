@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>rizab-summary 使い方</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+  .warn {
+    background: #fff7e6;
+    border: 1px solid #f0c36d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 1em 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>rizab-summary 使い方</h1>
+
+<h2>概要</h2>
+<p>会議室予約システム「りざぶ郎」（宇都宮・大宮の会議室）から予約情報を取得し、予約者ごとの一覧をTXTファイルに出力するCLIです。りざぶ郎自体にはファイル出力機能がないため、Playwrightでブラウザを自動操作して画面から情報を読み取ります。<code>--register-outlook</code> を付けると、取得した予約をOutlook予定表にも登録します。</p>
+
+<div class="warn">
+りざぶ郎のログイン画面の構造（入力欄・ボタン）は実際のHTMLを確認できていない部分があり、一般的なセレクタで実装しています。初回実行でログインに失敗する場合は <code>--headed</code> オプションでブラウザ画面を表示しながら実行し、動作を確認してください。
+</div>
+
+<h2>セットアップ（初回のみ）</h2>
+<pre>cd /c/ProgramData/NEWTOOLS
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -e ".[dev]"
+playwright install chromium</pre>
+
+<h2>環境変数</h2>
+<p>りざぶ郎の予約表ID（URLの <code>g=</code> の値）とログインパスワードは、コマンドやファイルに直接書かず環境変数で指定します。パスワードは会話やチャットに平文で貼らないよう注意してください。</p>
+<table>
+  <tr><th>環境変数</th><th>内容</th></tr>
+  <tr><td><code>RIZABU_GROUP_ID</code></td><td>予約表ID（例: <code>https://www.r326.com/b/main.aspx?g=xxxxx</code> の <code>xxxxx</code> 部分）</td></tr>
+  <tr><td><code>RIZABU_PASSWORD</code></td><td>りざぶ郎のログインパスワード</td></tr>
+</table>
+<pre># PowerShellの例
+$env:RIZABU_GROUP_ID = "xxxxxxxxxxxxxxxxx"
+$env:RIZABU_PASSWORD = "xxxxxxxx"</pre>
+
+<h2>実行方法</h2>
+<pre>source .venv/Scripts/activate
+rizab-summary</pre>
+<p>省略時は本日から7日後までの予約を取得します。</p>
+
+<h2>オプション</h2>
+<table>
+  <tr><th>オプション</th><th>説明</th><th>デフォルト</th></tr>
+  <tr><td><code>--start YYYY-MM-DD</code></td><td>集計開始日</td><td>本日</td></tr>
+  <tr><td><code>--end YYYY-MM-DD</code></td><td>集計終了日（この日を含む）</td><td>開始日から7日後</td></tr>
+  <tr><td><code>--output ファイルパス</code></td><td>出力するTXTファイルのパス</td><td><code>rizab_schedule_&lt;開始日&gt;_&lt;終了日&gt;.txt</code></td></tr>
+  <tr><td><code>--register-outlook</code></td><td>取得した予約をOutlook予定表にも登録する</td><td>登録しない</td></tr>
+  <tr><td><code>--headed</code></td><td>ブラウザ画面を表示して実行する（動作確認用）</td><td>非表示（headless）</td></tr>
+</table>
+
+<h2>実行例</h2>
+<pre># 本日から1週間分を取得してTXT出力
+rizab-summary
+
+# 期間を指定してOutlookにも登録
+rizab-summary --start 2026-09-01 --end 2026-09-07 --register-outlook
+
+# ログインがうまくいくか確認したい場合
+rizab-summary --headed</pre>
+
+<h2>出力例（TXT）</h2>
+<pre>■ 矢野
+  2026-08-25(火) 10:00-11:00  宇都宮 会議室2（右から2番目）
+
+■ 五百木
+  2026-08-25(火) 08:30-10:00  宇都宮 大会議室</pre>
+
+<h2>補足</h2>
+<ul>
+  <li>対象は宇都宮・大宮の会議室のみです（社用車・ゲストカード・豊洲は対象外）</li>
+  <li>りざぶ郎には参加者を記録する項目がないため、参加者情報は取得しません</li>
+  <li>氏名はりざぶ郎の表示に合わせて名字のみを扱います（りざぶ郎自体がフルネーム保存禁止のため）</li>
+  <li>Outlook登録は同じ件名・開始時刻の予定が既にある場合はスキップし、二重登録しません</li>
+  <li>テスト実行は <code>pytest tests/rizab_summary</code>（ブラウザ操作部分は含まず、データ整形部分のみを検証します）</li>
+</ul>
+
+</body>
+</html>
