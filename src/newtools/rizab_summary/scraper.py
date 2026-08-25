@@ -8,7 +8,7 @@
 
 from datetime import date, timedelta
 
-from playwright.sync_api import Page
+from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 
 from newtools.rizab_summary.models import Reservation, is_target_room, parse_reservation
 
@@ -40,9 +40,21 @@ def login(page: Page, group_id: str, password: str) -> None:
 
 
 def _read_popup_fields(page: Page, sche_box) -> dict[str, str] | None:
-    with page.expect_popup() as popup_info:
-        sche_box.click()
-    popup = popup_info.value
+    box = sche_box.bounding_box()
+    if box is None:
+        print(f"  -> bounding_boxが取得できずスキップ: {sche_box.inner_text()!r}")
+        return None
+
+    center_x = box["x"] + box["width"] / 2
+    center_y = box["y"] + box["height"] / 2
+
+    try:
+        with page.expect_popup(timeout=8000) as popup_info:
+            page.mouse.click(center_x, center_y)
+        popup = popup_info.value
+    except PlaywrightTimeoutError:
+        print(f"  -> ポップアップが開きませんでした（座標: {center_x:.0f}, {center_y:.0f}）。")
+        return None
     popup.wait_for_load_state("networkidle")
 
     fields: dict[str, str] = {}
@@ -67,9 +79,17 @@ def scrape_current_day(page: Page) -> list[Reservation]:
     """現在表示中の1日分の会議室予約を取得する。"""
     reservations = []
     boxes = page.locator(".sche")
-    for i in range(boxes.count()):
-        fields = _read_popup_fields(page, boxes.nth(i))
-        if fields is None or not is_target_room(fields["対象"]):
+    count = boxes.count()
+    print(f"予約枠を {count} 件検出しました。")
+    for i in range(count):
+        box = boxes.nth(i)
+        print(f"  [{i}] {box.inner_text()!r} をクリックします...")
+        fields = _read_popup_fields(page, box)
+        if fields is None:
+            print("  -> 詳細情報を取得できませんでした。")
+            continue
+        if not is_target_room(fields["対象"]):
+            print(f"  -> 対象外のアイテムのためスキップ: {fields['対象']!r}")
             continue
         reservations.append(parse_reservation(fields))
     return reservations
