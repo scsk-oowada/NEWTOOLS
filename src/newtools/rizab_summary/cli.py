@@ -8,7 +8,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 from newtools.rizab_summary.report import format_report
-from newtools.rizab_summary.scraper import scrape_range
+from newtools.rizab_summary.scraper import login, scrape_days
 
 GROUP_ID_ENV = "RIZABU_GROUP_ID"
 PASSWORD_ENV = "RIZABU_PASSWORD"
@@ -47,6 +47,11 @@ def main() -> None:
         action="store_true",
         help="ブラウザ画面を表示して実行する (動作確認用)",
     )
+    parser.add_argument(
+        "--debug-pause",
+        action="store_true",
+        help="ログイン後、予約取得を始める前にPlaywright Inspectorで一時停止する (動作確認用、--headedと併用)",
+    )
     args = parser.parse_args()
 
     group_id = os.environ.get(GROUP_ID_ENV)
@@ -61,7 +66,10 @@ def main() -> None:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=not args.headed)
         page = browser.new_page()
-        reservations = scrape_range(page, group_id, password, start, end)
+        login(page, group_id, password)
+        if args.debug_pause:
+            page.pause()
+        reservations = scrape_days(page, start, end)
         browser.close()
 
     output_path = args.output or Path(f"rizab_schedule_{start.isoformat()}_{end.isoformat()}.txt")

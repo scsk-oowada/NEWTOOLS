@@ -85,10 +85,8 @@ def go_to_prev_day(page: Page) -> None:
     page.wait_for_load_state("networkidle")
 
 
-def scrape_range(page: Page, group_id: str, password: str, start: date, end: date) -> list[Reservation]:
-    """指定期間（startからendを含む）の会議室予約を取得する。"""
-    login(page, group_id, password)
-
+def scrape_days(page: Page, start: date, end: date) -> list[Reservation]:
+    """ログイン済みのpageに対し、指定期間（startからendを含む）の会議室予約を取得する。"""
     today = date.today()
     delta_from_today = (start - today).days
     for _ in range(delta_from_today):
@@ -104,3 +102,9 @@ def scrape_range(page: Page, group_id: str, password: str, start: date, end: dat
             go_to_next_day(page)
 
     return reservations
+
+
+def scrape_range(page: Page, group_id: str, password: str, start: date, end: date) -> list[Reservation]:
+    """指定期間（startからendを含む）の会議室予約を取得する。"""
+    login(page, group_id, password)
+    return scrape_days(page, start, end)
