@@ -48,6 +48,10 @@ def _read_popup_fields(page: Page, sche_box) -> dict[str, str] | None:
     center_x = box["x"] + box["width"] / 2
     center_y = box["y"] + box["height"] / 2
 
+    # 1回目のクリックで予約枠が選択状態になり、選択済みの状態で2回目のクリックを
+    # 行うと詳細ポップアップが開く。
+    page.mouse.click(center_x, center_y)
+    page.wait_for_timeout(300)
     try:
         with page.expect_popup(timeout=8000) as popup_info:
             page.mouse.click(center_x, center_y)
