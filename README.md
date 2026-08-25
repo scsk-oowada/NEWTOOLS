@@ -36,3 +36,4 @@ pytest
 ## ツール一覧
 
 - `teams-schedule` — Outlookカレンダーの予定一覧を取得するCLI。使い方は [docs/usage.html](docs/usage.html) を参照。
+- `file-stats` — 指定フォルダ内のファイルを拡張子別に集計するCLI。
