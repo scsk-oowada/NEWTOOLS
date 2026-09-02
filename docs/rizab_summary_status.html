@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>rizab-summary 開発状況</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+  .ok { color: #1a7f37; font-weight: bold; }
+  .ng { color: #cf222e; font-weight: bold; }
+  .pending { color: #9a6700; font-weight: bold; }
+  .note {
+    background: #fff7e6;
+    border: 1px solid #f0c36d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 1em 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>rizab-summary 開発状況（2026-09-02 時点、作業中断中）</h1>
+
+<div class="note">
+このドキュメントは作業を中断する際の引き継ぎ用メモです。詳しい使い方は
+<a href="rizab_summary_usage.html">docs/rizab_summary_usage.html</a> を参照してください。
+</div>
+
+<h2>目的</h2>
+<p>会議室予約システム「りざぶ郎」（宇都宮・大宮の会議室）にはファイル出力機能がないため、Playwrightでブラウザを自動操作して予約情報を取得し、予約者ごとの一覧をTXT出力する。あわせてOutlook予定表への登録も行う。</p>
+
+<h2>完了している部分</h2>
+<table>
+  <tr><th>項目</th><th>状態</th><th>補足</th></tr>
+  <tr><td>りざぶ郎へのログイン</td><td class="ok">動作確認済み</td><td>実環境で成功を確認</td></tr>
+  <tr><td>日付の移動（前日／翌日ボタン相当）</td><td class="ok">実装済み</td><td><code>OnButtonUndercal1/3()</code> をJS経由で呼び出し</td></tr>
+  <tr><td>予約詳細ポップアップの項目解析</td><td class="ok">実装・テスト済み</td><td><code>models.py</code> / <code>test_models.py</code></td></tr>
+  <tr><td>予約者ごとの集計・TXT整形</td><td class="ok">実装・テスト済み</td><td><code>report.py</code> / <code>test_report.py</code></td></tr>
+  <tr><td>Outlook予定表への登録（二重登録防止つき）</td><td class="ok">実装済み（実環境での最終確認は未実施）</td><td><code>outlook_register.py</code></td></tr>
+  <tr><td>CLI（<code>rizab-summary</code>）</td><td class="ok">実装済み</td><td><code>--start</code> / <code>--end</code> / <code>--output</code> / <code>--register-outlook</code> / <code>--headed</code> / <code>--debug-pause</code></td></tr>
+</table>
+
+<h2>未解決の課題（ここで中断）</h2>
+<p class="ng">予約枠をクリックして詳細ポップアップを開く処理が、まだ自動化できていません。</p>
+<p>実環境で判明した挙動は以下の通りです。</p>
+<ul>
+  <li>予約枠を<strong>1回目クリック</strong>すると、選択状態（赤枠）になり、簡易情報の吹き出しが表示される → <span class="ok">ここまでは自動化でも成功</span></li>
+  <li>選択済みの状態で<strong>2回目クリック</strong>すると、詳細ポップアップ（<code>scheprop.aspx</code>）が別ウィンドウで開く → <span class="ng">自動化では失敗（ポップアップが開かない）</span></li>
+</ul>
+
+<h3>試した対処と結果</h3>
+<table>
+  <tr><th>試した内容</th><th>結果</th></tr>
+  <tr><td>要素の <code>.click()</code> を1回だけ呼ぶ</td><td class="ng">失敗（<code>expect_popup</code> がタイムアウト）</td></tr>
+  <tr><td>要素クリックを座標クリック（<code>bounding_box</code>の中心を<code>page.mouse.click</code>）に変更</td><td class="ng">失敗（1回目の選択は成功、2回目でポップアップ開かず）</td></tr>
+  <tr><td>1回目クリック→300ms待機→2回目クリック</td><td class="ng">全ての予約枠（48件中）で同様に失敗</td></tr>
+  <tr><td>クリック間隔を300ms→1000msに延長（ダブルクリック誤認識を回避する狙い）</td><td class="ng">改善せず失敗</td></tr>
+</table>
+
+<h2>次に試すこと</h2>
+<ol>
+  <li><code>python -m playwright codegen "https://www.r326.com/b/main.aspx?g=&lt;予約表ID&gt;"</code> でブラウザ操作を記録し、実際に人がクリックしたときにPlaywrightがどのようなイベント／ポップアップを検知するかを生成コードで確認する</li>
+  <li>生成されたコードを元に <code>src/newtools/rizab_summary/scraper.py</code> の <code>_read_popup_fields</code> を修正する</li>
+  <li>実環境で <code>rizab-summary --headed</code> を再テストする</li>
+</ol>
+
+<h2>関連情報</h2>
+<ul>
+  <li>ブランチ: <code>worktree-add-claude-md-rule</code>（<code>master</code>にマージ済み、リモートpush済み）</li>
+  <li>関連PR: #1〜#5（りざぶ郎の会議室情報取得ロジックの追加・修正）</li>
+  <li>環境変数: <code>RIZABU_GROUP_ID</code> / <code>RIZABU_PASSWORD</code>（りざぶ郎のログインパスワードは会話中に一度平文で共有されているため、可能であれば変更を推奨）</li>
+</ul>
+
+</body>
+</html>
