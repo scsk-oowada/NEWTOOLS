@@ -48,7 +48,7 @@
 <h1>mymap-csv 使い方</h1>
 
 <h2>概要</h2>
-<p>座標（緯度・経度）のリストから、Google My Mapsの「インポート」機能で読み込めるCSVファイルを作成するCLIです。Google My Mapsには公式のAPIがないため、このツールはインポート用のCSVを作るところまでを行い、最後にMy Mapsへ読み込む操作はご自身で行っていただきます。</p>
+<p>座標（緯度・経度）のリストから、Google My Mapsの「インポート」機能で読み込めるCSVファイルを作成するCLIです。Google My Mapsには公式のAPIがないため、<code>--map-url</code> を指定した場合はPlaywrightでブラウザを操作し、既存の地図に新しいレイヤーとしてCSVをインポートして画面に表示します（UI操作の自動化のため、Googleの仕様変更で動作しなくなる可能性があります）。<code>--map-url</code> を指定しない場合は、これまでと同様にCSV作成のみを行い、My Mapsへの読み込みはご自身で行っていただきます。</p>
 
 <h2>セットアップ（初回のみ）</h2>
 <pre>cd /c/ProgramData/NEWTOOLS
@@ -73,15 +73,32 @@ mymap-csv 入力ファイル.txt</pre>
 <h2>オプション</h2>
 <table>
   <tr><th>オプション</th><th>説明</th><th>デフォルト</th></tr>
-  <tr><td><code>input</code>（位置引数）</td><td>座標リストのテキストファイル</td><td>（必須）</td></tr>
+  <tr><td><code>input</code>（位置引数）</td><td>座標リストのテキストファイル</td><td>（<code>--login</code> 指定時は不要、それ以外は必須）</td></tr>
   <tr><td><code>--output ファイルパス</code></td><td>出力するCSVファイルのパス</td><td>入力ファイル名の拡張子を <code>.csv</code> に変えたもの</td></tr>
+  <tr><td><code>--map-url URL</code></td><td>CSVをインポートする既存のGoogle My MapsのURL。指定すると、CSV作成後にブラウザでその地図を開き、新しいレイヤーとしてCSVをインポートして表示する</td><td>環境変数 <code>MYMAP_URL</code>（未設定なら自動インポートは行わずCSV作成のみ）</td></tr>
+  <tr><td><code>--login</code></td><td>ブラウザを表示してGoogleへ手動でログインし、そのログイン状態を保存する</td><td>（フラグ）</td></tr>
 </table>
 
 <h2>実行例</h2>
 <pre>mymap-csv pins.txt
 mymap-csv pins.txt --output C:\Users\me\Desktop\mymap.csv</pre>
 
-<h2>Google My Mapsへの読み込み方</h2>
+<h2>Google My Mapsへ自動でピンを表示する（--map-url オプション）</h2>
+<p>CSVを作るだけでなく、そのままGoogle My Mapsに読み込んでピンが立った地図を表示させたい場合は、次の手順で行います。</p>
+
+<h3>1. 初回のみ：Googleへログインし、ログイン状態を保存する</h3>
+<pre>mymap-csv --login</pre>
+<p>ブラウザが開くので、そこで通常どおりGoogleアカウントにログインします。My Mapsの地図一覧が表示されたら、コマンドを実行しているターミナルに戻ってEnterキーを押してください。ログイン状態は <code>%USERPROFILE%\.newtools\mymap_csv_session.json</code> に保存され、以降はこのファイルを使って自動的にログイン済み状態を再現します（IDやパスワードをスクリプトに自動入力する方式は、Googleに不審なログインとして検知・ブロックされやすいため採用していません）。</p>
+
+<h3>2. CSVを既存の地図にインポートして表示する</h3>
+<p>あらかじめ用意しておいた既存のMy MapsのURL（編集画面のURL）を <code>--map-url</code> で指定します。</p>
+<pre>mymap-csv pins.txt --map-url "https://www.google.com/maps/d/edit?mid=＜地図のID＞"</pre>
+<p>毎回同じ地図を使う場合は、環境変数 <code>MYMAP_URL</code> に地図のURLを設定しておけば <code>--map-url</code> を省略できます。</p>
+<pre>export MYMAP_URL="https://www.google.com/maps/d/edit?mid=＜地図のID＞"
+mymap-csv pins.txt</pre>
+<p>実行すると、保存済みのログイン状態でブラウザが開き、指定した地図に新しいレイヤーを追加してCSVを自動でインポートします。実行するたびに新しいレイヤーが追加されるため、既存のピンは消えずに地図に積み重なっていきます。列選択のウィザードも可能な範囲で自動的に進めますが、Google側のUI変更などで途中で止まった場合は、表示されたブラウザ上でそのまま手動で操作を完了してください。地図の内容を確認したら、ターミナルに戻ってEnterキーを押すとブラウザが閉じます。</p>
+
+<h2>Google My Mapsへ手動で読み込む方法（--map-url を使わない場合）</h2>
 <ol>
   <li><a href="https://www.google.com/maps/d/" target="_blank">Google My Maps</a> を開き、新しい地図を作成（または既存の地図を開く）</li>
   <li>レイヤーの「インポート」をクリック</li>
@@ -98,6 +115,8 @@ mymap-csv pins.txt --output C:\Users\me\Desktop\mymap.csv</pre>
 <ul>
   <li>地名を指定しなかった行は、名前の列に座標（緯度,経度）がそのまま入ります</li>
   <li>緯度・経度が数値として読み取れない行や、列数が2列・3列以外の行がある場合はエラーとして知らせ、処理を中断します</li>
+  <li><code>--map-url</code> によるブラウザ自動操作は、Google My MapsのUIを直接操作する仕組みのため、Google側の仕様変更で動作しなくなる可能性があります。うまく進まない場合は、表示されたブラウザ上で残りの操作を手動で行ってください</li>
+  <li>ログイン状態は <code>%USERPROFILE%\.newtools\mymap_csv_session.json</code> に平文で保存されます。共有PCなどでは取り扱いに注意してください</li>
   <li>テスト実行は <code>pytest tests/mymap_csv</code></li>
 </ul>
 
