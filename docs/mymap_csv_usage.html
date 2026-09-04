@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>mymap-csv 使い方</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+</style>
+</head>
+<body>
+
+<h1>mymap-csv 使い方</h1>
+
+<h2>概要</h2>
+<p>座標（緯度・経度）のリストから、Google My Mapsの「インポート」機能で読み込めるCSVファイルを作成するCLIです。Google My Mapsには公式のAPIがないため、このツールはインポート用のCSVを作るところまでを行い、最後にMy Mapsへ読み込む操作はご自身で行っていただきます。</p>
+
+<h2>セットアップ（初回のみ）</h2>
+<pre>cd /c/ProgramData/NEWTOOLS
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -e ".[dev]"</pre>
+
+<h2>入力ファイルの形式</h2>
+<p>テキストファイルに1行1件、次のいずれかの形式で座標を記載します。</p>
+<pre># 緯度,経度 のみ（名前は座標そのものになる）
+34.702485,135.495951
+
+# 緯度,経度,地名（地名を指定すると、それがピンの名前になる）
+35.681236,139.767125,東京駅</pre>
+<p>全角カンマ（，）が混ざっていても自動的に半角に変換して解析します。逆ジオコーディング（座標から自動で地名を判定する機能）は実装していません。地名を付けたい場合は3列目に手動で入力してください。</p>
+
+<h2>実行方法</h2>
+<pre>source .venv/Scripts/activate
+mymap-csv 入力ファイル.txt</pre>
+<p>実行すると、入力ファイルと同じ場所に同名の <code>.csv</code> ファイルが作成されます。</p>
+
+<h2>オプション</h2>
+<table>
+  <tr><th>オプション</th><th>説明</th><th>デフォルト</th></tr>
+  <tr><td><code>input</code>（位置引数）</td><td>座標リストのテキストファイル</td><td>（必須）</td></tr>
+  <tr><td><code>--output ファイルパス</code></td><td>出力するCSVファイルのパス</td><td>入力ファイル名の拡張子を <code>.csv</code> に変えたもの</td></tr>
+</table>
+
+<h2>実行例</h2>
+<pre>mymap-csv pins.txt
+mymap-csv pins.txt --output C:\Users\me\Desktop\mymap.csv</pre>
+
+<h2>Google My Mapsへの読み込み方</h2>
+<ol>
+  <li><a href="https://www.google.com/maps/d/" target="_blank">Google My Maps</a> を開き、新しい地図を作成（または既存の地図を開く）</li>
+  <li>レイヤーの「インポート」をクリック</li>
+  <li>このツールで作成したCSVファイルを選択</li>
+  <li>緯度・経度の列を指定する画面が出た場合は「緯度」「経度」列を選択し、タイトルに使う列として「名前」を選択</li>
+</ol>
+
+<h2>出力例（CSV）</h2>
+<pre>名前,緯度,経度
+東京駅,35.681236,139.767125
+34.702485,135.495951,34.702485,135.495951</pre>
+
+<h2>補足</h2>
+<ul>
+  <li>地名を指定しなかった行は、名前の列に座標（緯度,経度）がそのまま入ります</li>
+  <li>緯度・経度が数値として読み取れない行や、列数が2列・3列以外の行がある場合はエラーとして知らせ、処理を中断します</li>
+  <li>テスト実行は <code>pytest tests/mymap_csv</code></li>
+</ul>
+
+</body>
+</html>
