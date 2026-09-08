@@ -1,4 +1,4 @@
-"""りざぶ郎の会議室予約をOutlook予定表にイベント登録するモジュール。"""
+"""りざぶ郎から取得した自分の会議室予約をOutlook予定表にイベント登録するモジュール。"""
 
 from datetime import datetime
 
@@ -10,8 +10,14 @@ OL_FOLDER_CALENDAR = 9
 OL_APPOINTMENT_ITEM = 1
 
 
+def _build_location(reservation: Reservation) -> str:
+    return f"{reservation.location} {reservation.room}".strip()
+
+
 def _build_subject(reservation: Reservation) -> str:
-    return f"[{reservation.reserver}] {reservation.room}"
+    if reservation.subject:
+        return reservation.subject
+    return _build_location(reservation)
 
 
 def _to_datetime(reservation: Reservation, time_text: str) -> datetime:
@@ -36,7 +42,7 @@ def _exists(calendar_items, subject: str, start: datetime) -> bool:
 
 
 def register_events(reservations: list[Reservation]) -> tuple[int, int]:
-    """予約一覧をOutlook予定表にイベント登録する。
+    """自分の予約一覧をOutlook予定表にイベント登録する。
 
     同じ件名・開始時刻の予定が既に存在する場合は二重登録せずスキップする。
     戻り値は (登録件数, スキップ件数)。
@@ -59,6 +65,7 @@ def register_events(reservations: list[Reservation]) -> tuple[int, int]:
 
         appointment = outlook.CreateItem(OL_APPOINTMENT_ITEM)
         appointment.Subject = subject
+        appointment.Location = _build_location(reservation)
         appointment.Start = start
         appointment.End = end
         appointment.ReminderSet = False

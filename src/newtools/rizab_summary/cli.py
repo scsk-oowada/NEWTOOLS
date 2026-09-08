@@ -69,7 +69,7 @@ def main() -> None:
         login(page, group_id, password)
         if args.debug_pause:
             page.pause()
-        reservations = scrape_days(page, start, end)
+        reservations = scrape_days(page, group_id, start, end)
         browser.close()
 
     output_path = args.output or Path(f"rizab_schedule_{start.isoformat()}_{end.isoformat()}.txt")

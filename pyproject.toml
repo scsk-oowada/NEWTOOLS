@@ -12,6 +12,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pyinstaller",
 ]
 
 [project.scripts]
@@ -19,6 +20,10 @@ teams-schedule = "newtools.teams_schedule.cli:main"
 file-stats = "newtools.file_stats.cli:main"
 rizab-summary = "newtools.rizab_summary.cli:main"
 mymap-csv = "newtools.mymap_csv.cli:main"
+rizab-my-schedule = "newtools.rizab_my_schedule.cli:main"
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
 
 [build-system]
 requires = ["setuptools>=68.0"]

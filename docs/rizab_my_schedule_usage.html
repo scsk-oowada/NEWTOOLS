@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>rizab-my-schedule 使い方</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+  .warn {
+    background: #fff7e6;
+    border: 1px solid #f0c36d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 1em 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>rizab-my-schedule 使い方</h1>
+
+<h2>概要</h2>
+<p>りざぶ郎（宇都宮・大宮の会議室予約システム）にログインし、<strong>自分が予約している会議室の予定</strong>を取得して、Outlook予定表に自動登録するツールです。exe化してダブルクリックするだけで実行できるようにすることを想定しています。</p>
+<p>ログイン情報（グループID・パスワード・氏名）は初回実行時に一度だけ入力すれば、Windows DPAPIで暗号化してローカルに保存されます。以降はダブルクリックだけで、本日から30日先までの自分の予約を取得し、Outlookに登録します。</p>
+
+<div class="warn">
+りざぶ郎の予約情報取得には、画面が内部で呼び出しているAjax API（rizab-summaryと同じ仕組み）を利用しています。りざぶ郎側の仕様変更で動作しなくなる可能性があります。
+</div>
+
+<h2>セットアップ（初回のみ、開発・ビルドを行う場合）</h2>
+<pre>cd /c/ProgramData/NEWTOOLS
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -e ".[dev]"
+playwright install chromium</pre>
+
+<h2>コマンドラインでの実行</h2>
+<pre>source .venv/Scripts/activate
+rizab-my-schedule</pre>
+<p>初回実行時は以下を対話入力で聞かれます。</p>
+<table>
+  <tr><th>入力項目</th><th>内容</th></tr>
+  <tr><td>グループID</td><td>予約表URLの <code>g=</code> の値</td></tr>
+  <tr><td>パスワード</td><td>りざぶ郎のログインパスワード</td></tr>
+  <tr><td>氏名</td><td>りざぶ郎の予約者表示に一致する氏名（名字のみ）。自分の予約かどうかの判定に使う</td></tr>
+</table>
+<p>入力内容は <code>%APPDATA%\newtools\rizab_my_schedule\config.bin</code> にDPAPIで暗号化して保存されます。実行したユーザー・PCでなければ復号できません。設定をやり直したい場合は、このファイルを削除してから再実行してください。</p>
+
+<h2>exe化（ダブルクリックで実行する場合）</h2>
+<p>PyInstallerで1ファイルのexeにビルドします。</p>
+<pre>pip install -e ".[dev]"
+pyinstaller --onefile --console --name rizab-my-schedule --hidden-import win32timezone ^
+    src/newtools/rizab_my_schedule/cli.py</pre>
+<p><code>dist/rizab-my-schedule.exe</code> が生成されます。デスクトップなどに置いてダブルクリックすれば実行できます。</p>
+<div class="warn">
+このexeはPlaywright・Chromium・Outlookがセットアップ済みの<strong>自分のPC専用</strong>です（Chromium本体はexeに同梱されないため、実行環境に <code>playwright install chromium</code> が必要です）。他のPCへ配布する用途には対応していません。
+</div>
+
+<h2>実行結果の例</h2>
+<pre>矢野 さんの予約を 2026-09-08 から 2026-10-07 まで取得します...
+1 件の予約を取得しました。
+Outlook予定表に登録しました（新規 1 件 / 既存のためスキップ 0 件）。
+
+完了しました。Enterキーを押すと終了します。</pre>
+<p>登録される予定は、件名にりざぶ郎の予約件名（未入力の場合は「拠点 会議室名」）、場所に「拠点 会議室名」が設定されます。</p>
+
+<h2>補足</h2>
+<ul>
+  <li>対象は宇都宮・大宮の会議室のみです（社用車・ゲストカード・豊洲などは対象外）</li>
+  <li>取得期間は実行日から30日間で固定です（コード上の <code>FETCH_DAYS</code> を変更すれば調整できます）</li>
+  <li>自分の予約かどうかは、設定した氏名とりざぶ郎の予約者表示（名字のみ）の完全一致で判定します</li>
+  <li>Outlook登録は同じ件名・開始時刻の予定が既にある場合はスキップし、二重登録しません</li>
+  <li>テスト実行は <code>pytest tests/rizab_my_schedule</code>（ログイン・API呼び出し・Outlook COM呼び出しは含まず、設定保存・フィルタ判定・件名整形部分のみを検証します）</li>
+</ul>
+
+</body>
+</html>
