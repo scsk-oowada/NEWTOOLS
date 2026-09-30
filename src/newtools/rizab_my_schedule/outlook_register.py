@@ -25,17 +25,30 @@ def _to_datetime(reservation: Reservation, time_text: str) -> datetime:
     return datetime.combine(reservation.date, datetime.min.time()).replace(hour=hour, minute=minute)
 
 
+def _format_for_outlook(dt: datetime) -> str:
+    """Outlookのappointment.Start/Endに渡す文字列を作る。
+
+    タイムゾーン情報のないdatetimeをそのまま代入すると、pywin32のCOM変換で
+    UTCとして扱われてしまい、実際の予定がローカルタイムゾーン分（日本では9時間）
+    早い時刻で登録されてしまう。文字列で渡すとOutlook側の日時解析でシステムの
+    ローカルタイムゾーンとして正しく解釈されるため、これを利用する。
+    """
+    return dt.strftime("%Y/%m/%d %H:%M")
+
+
 def _exists(calendar_items, subject: str, start: datetime) -> bool:
     """同じ件名・開始時刻の予定が既に存在するか判定する。
 
     [Start]をRestrictの日時リテラルで直接比較すると、Outlookのロケール依存の
     日時解析によりヒットしないことがあるため、件名のみでRestrictし、開始時刻は
-    Python側でローカルタイムゾーンに変換した上で比較する。
+    Python側で比較する。pywin32がitem.Startに返すdatetimeはtzinfoにUTCが
+    付与されているが、実体はローカルタイムゾーンの値（上記の文字列代入によって
+    正しく保存された値）なので、タイムゾーン変換はせずtzinfoを外すだけでよい。
     """
     subject_escaped = subject.replace("'", "''")
     candidates = calendar_items.Restrict(f"[Subject] = '{subject_escaped}'")
     for item in candidates:
-        item_start = item.Start.astimezone().replace(tzinfo=None)
+        item_start = item.Start.replace(tzinfo=None)
         if item_start == start:
             return True
     return False
@@ -66,8 +79,8 @@ def register_events(reservations: list[Reservation]) -> tuple[int, int]:
         appointment = outlook.CreateItem(OL_APPOINTMENT_ITEM)
         appointment.Subject = subject
         appointment.Location = _build_location(reservation)
-        appointment.Start = start
-        appointment.End = end
+        appointment.Start = _format_for_outlook(start)
+        appointment.End = _format_for_outlook(end)
         appointment.ReminderSet = False
         appointment.Save()
         created += 1

@@ -30,6 +30,14 @@ _SEL_ITEM_RE = re.compile(r"selItem=(\d+)")
 ShouldInclude = Callable[[str, str], bool]
 
 
+class LoginError(Exception):
+    """りざぶ郎へのログインに失敗した場合に発生する例外の基底クラス。"""
+
+
+class InvalidCredentialsError(LoginError):
+    """グループIDまたはパスワードが誤っている場合に発生する例外。"""
+
+
 def login(page: Page, group_id: str, password: str) -> None:
     """りざぶ郎にログインし、指定した予約表を開く。"""
     page.goto(MAIN_URL_TEMPLATE.format(group_id=group_id))
@@ -39,7 +47,7 @@ def login(page: Page, group_id: str, password: str) -> None:
         if "r326.com" not in page.url:
             # 会社のSSO（Microsoft Entra ID等）のログイン画面に割り込まれた状態。
             # 短時間に何度もログインを試みた場合などに発生することがある。
-            raise ValueError(
+            raise LoginError(
                 f"りざぶ郎以外のページにリダイレクトされました（{page.url}）。"
                 "会社のSSOログインが求められている可能性があります。"
                 "時間を置いてから再実行してください。"
@@ -57,6 +65,13 @@ def login(page: Page, group_id: str, password: str) -> None:
         password_field.first.press("Enter")
 
     page.wait_for_load_state("networkidle")
+
+    # ログインに失敗した場合、りざぶ郎は再度パスワード入力欄を含む
+    # ログイン画面を返す。この時点でも入力欄が残っていれば認証情報が誤っている。
+    if page.locator('input[type="password"]').count() > 0:
+        raise InvalidCredentialsError(
+            "ログインに失敗しました。グループIDまたはパスワードが正しいか確認してください。"
+        )
 
 
 def _extract_status_id(html: str) -> str:

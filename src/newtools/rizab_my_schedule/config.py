@@ -9,7 +9,6 @@ exe化してダブルクリックだけで実行できるようにするため�
 import json
 import os
 from dataclasses import asdict, dataclass
-from getpass import getpass
 from pathlib import Path
 
 import win32crypt
@@ -41,6 +40,11 @@ def load_config() -> Config | None:
     return Config(**data)
 
 
+def delete_config() -> None:
+    """保存済みの設定を削除する。次回実行時に再入力させたい場合に使う。"""
+    CONFIG_PATH.unlink(missing_ok=True)
+
+
 def save_config(config: Config) -> None:
     """設定をDPAPIで暗号化してローカルファイルに保存する。"""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -56,7 +60,8 @@ def prompt_config() -> Config:
     print("初回実行のため、りざぶ郎のログイン情報を設定します。")
     print("（次回以降はこの入力なしで自動実行されます）")
     group_id = input("グループID（予約表URLの g= の値）: ").strip()
-    password = getpass("パスワード: ").strip()
+    # 入力ミスに気付けるよう、パスワードも画面に表示する（getpassは非表示のため使わない）。
+    password = input("パスワード: ").strip()
     my_name = input("りざぶ郎の予約者表示に一致する、あなたの氏名（名字のみ）: ").strip()
     return Config(group_id=group_id, password=password, my_name=my_name)
 

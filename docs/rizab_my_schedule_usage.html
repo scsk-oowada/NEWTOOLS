@@ -56,18 +56,17 @@
 
 <h2>概要</h2>
 <p>りざぶ郎（宇都宮・大宮の会議室予約システム）にログインし、<strong>自分が予約している会議室の予定</strong>を取得して、Outlook予定表に自動登録するツールです。exe化してダブルクリックするだけで実行できるようにすることを想定しています。</p>
-<p>ログイン情報（グループID・パスワード・氏名）は初回実行時に一度だけ入力すれば、Windows DPAPIで暗号化してローカルに保存されます。以降はダブルクリックだけで、本日から30日先までの自分の予約を取得し、Outlookに登録します。</p>
+<p>ログイン情報（グループID・パスワード・氏名）は初回実行時に一度だけ入力すれば、Windows DPAPIで暗号化してローカルに保存されます。以降はダブルクリックだけで、本日から30日先までの自分の予約を取得します。取得結果は日付・時間・会議室名の一覧として画面に表示され、矢印キー（↑↓）とスペースキーで予約ごとに登録するかどうかを選び、Enterで確定した分だけOutlook予定表に登録されます（登録すると、同じ予定がTeamsの予定表にも自動的に反映されます）。</p>
 
 <div class="warn">
-りざぶ郎の予約情報取得には、画面が内部で呼び出しているAjax API（rizab-summaryと同じ仕組み）を利用しています。りざぶ郎側の仕様変更で動作しなくなる可能性があります。
+りざぶ郎の予約情報取得・ログインには、画面が内部で呼び出しているAjax API・ログインフォームへの直接リクエストを利用しています（ブラウザは起動しません）。りざぶ郎側の仕様変更で動作しなくなる可能性があります。
 </div>
 
 <h2>セットアップ（初回のみ、開発・ビルドを行う場合）</h2>
 <pre>cd /c/ProgramData/NEWTOOLS
 python -m venv .venv
 source .venv/Scripts/activate
-pip install -e ".[dev]"
-playwright install chromium</pre>
+pip install -e ".[dev]"</pre>
 
 <h2>コマンドラインでの実行</h2>
 <pre>source .venv/Scripts/activate
@@ -79,33 +78,52 @@ rizab-my-schedule</pre>
   <tr><td>パスワード</td><td>りざぶ郎のログインパスワード</td></tr>
   <tr><td>氏名</td><td>りざぶ郎の予約者表示に一致する氏名（名字のみ）。自分の予約かどうかの判定に使う</td></tr>
 </table>
-<p>入力内容は <code>%APPDATA%\newtools\rizab_my_schedule\config.bin</code> にDPAPIで暗号化して保存されます。実行したユーザー・PCでなければ復号できません。設定をやり直したい場合は、このファイルを削除してから再実行してください。</p>
+<p>入力内容は <code>%APPDATA%\newtools\rizab_my_schedule\config.bin</code> にDPAPIで暗号化して保存されます。実行したユーザー・PCでなければ復号できません。パスワードは入力ミスに気付けるよう画面に表示されます。グループIDまたはパスワードが誤っていてログインに失敗した場合は、保存済みの設定を自動的に削除するので、次回実行時に再入力してください（手動で削除したい場合は、このファイルを削除してから再実行してください）。</p>
 
 <h2>exe化（ダブルクリックで実行する場合）</h2>
 <p>PyInstallerで1ファイルのexeにビルドします。</p>
 <pre>pip install -e ".[dev]"
 pyinstaller --onefile --console --name rizab-my-schedule --hidden-import win32timezone ^
     src/newtools/rizab_my_schedule/cli.py</pre>
-<p><code>dist/rizab-my-schedule.exe</code> が生成されます。デスクトップなどに置いてダブルクリックすれば実行できます。</p>
+<p><code>dist/rizab-my-schedule.exe</code> が生成されます。この1ファイルを他のPCにコピーして配布できます。</p>
+
+<h2>他のPCで使う場合の事前準備</h2>
+<p>ブラウザ（Chromium）は使用しないため、Playwrightのインストールや<code>playwright install</code>の実行は不要です。<strong>配布先のPCで用意してもらう必要があるのは以下だけ</strong>です。</p>
+<ol>
+  <li><code>rizab-my-schedule.exe</code> を配布先PCの任意のフォルダにコピーする</li>
+  <li>配布先PCに<strong>クラシック版Outlookデスクトップアプリ</strong>がインストール・設定済み（配布先の利用者自身のメールアカウントでサインイン済み）であることを確認する（新Outlook・Web版Outlookでは動作しません）</li>
+  <li><code>rizab-my-schedule.exe</code> をダブルクリックして実行する（初回実行時に、その利用者自身のりざぶ郎グループID・パスワード・氏名の入力が必要）</li>
+</ol>
 <div class="warn">
-このexeはPlaywright・Chromium・Outlookがセットアップ済みの<strong>自分のPC専用</strong>です（Chromium本体はexeに同梱されないため、実行環境に <code>playwright install chromium</code> が必要です）。他のPCへ配布する用途には対応していません。
+りざぶ郎の予約表URL（<code>www.r326.com</code>）に配布先PCからアクセスできるネットワーク環境であることも必要です。また、社内で配布されていない実行ファイルのため、Windows SmartScreenやウイルス対策ソフトが警告を出す場合があります。
 </div>
 
 <h2>実行結果の例</h2>
 <pre>矢野 さんの予約を 2026-09-08 から 2026-10-07 まで取得します...
-1 件の予約を取得しました。
-Outlook予定表に登録しました（新規 1 件 / 既存のためスキップ 0 件）。
+2 件の予約を取得しました。
+Outlook/Teamsに登録するスケジュールを選択してください。
+　&gt;を矢印キーで動かし、登録する場合はSpaceキーを入力すると登録対象に × が付きます
+↑↓:移動  スペース:登録するか切り替え  Enter:確定
 
-完了しました。Enterキーを押すと終了します。</pre>
+    日付            時間            会議室
+&gt;  [x] 2026-09-08(火)  10:00-11:00     宇都宮 会議室2（右から2番目）
+   [x] 2026-09-09(水)  13:00-14:00     大宮 会議室1（6人用）
+
+Outlook予定表に登録しました（新規 2 件 / 既存のためスキップ 0 件）。
+
+完了しました。再実行しますか？ (y/n): </pre>
+<p>矢印キー（↑↓）で選択中の予約（<code>&gt;</code>で示される行）を移動し、スペースキーで登録するかどうか（<code>[x]</code>/<code>[ ]</code>）を切り替え、Enterキーで確定します。既定では全件チェック済みなので、登録したくない予約だけスペースキーで外してください。1件もチェックしないままEnterを押すと登録は行われません。</p>
 <p>登録される予定は、件名にりざぶ郎の予約件名（未入力の場合は「拠点 会議室名」）、場所に「拠点 会議室名」が設定されます。</p>
+<p>Teamsの予定表はOutlookと同じExchangeカレンダーを参照しているため、Outlookに登録した予定はTeamsの予定表にも自動的に反映されます。別途Teams向けの登録は不要です。</p>
+<p>最後に「再実行しますか？ (y/n)」と聞かれます。<code>y</code>と答えると設定はそのまま使い、りざぶ郎から予約を取得し直して同じ操作を繰り返します。<code>y</code>以外を入力するとツールを終了します。</p>
 
 <h2>補足</h2>
 <ul>
   <li>対象は宇都宮・大宮の会議室のみです（社用車・ゲストカード・豊洲などは対象外）</li>
   <li>取得期間は実行日から30日間で固定です（コード上の <code>FETCH_DAYS</code> を変更すれば調整できます）</li>
-  <li>自分の予約かどうかは、設定した氏名とりざぶ郎の予約者表示（名字のみ）の完全一致で判定します</li>
+  <li>自分の予約かどうかは、設定した氏名（名字のみ）でりざぶ郎の予約者表示の前方一致判定を行います（予約者表示が「名字のみ」「名字＋名前」のどちらでも一致します）</li>
   <li>Outlook登録は同じ件名・開始時刻の予定が既にある場合はスキップし、二重登録しません</li>
-  <li>テスト実行は <code>pytest tests/rizab_my_schedule</code>（ログイン・API呼び出し・Outlook COM呼び出しは含まず、設定保存・フィルタ判定・件名整形部分のみを検証します）</li>
+  <li>テスト実行は <code>pytest tests/rizab_my_schedule</code>（ログイン・API呼び出し・Outlook COM呼び出しは含まず、設定保存・フィルタ判定・件名整形・選択画面の表示内容のみを検証します）</li>
 </ul>
 
 </body>
