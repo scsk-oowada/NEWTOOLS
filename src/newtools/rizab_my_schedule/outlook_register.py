@@ -54,26 +54,26 @@ def _exists(calendar_items, subject: str, start: datetime) -> bool:
     return False
 
 
-def register_events(reservations: list[Reservation]) -> tuple[int, int]:
+def register_events(reservations: list[Reservation]) -> tuple[list[Reservation], list[Reservation]]:
     """自分の予約一覧をOutlook予定表にイベント登録する。
 
     同じ件名・開始時刻の予定が既に存在する場合は二重登録せずスキップする。
-    戻り値は (登録件数, スキップ件数)。
+    戻り値は (新規登録した予約一覧, 既存のためスキップした予約一覧)。
     """
     outlook = win32com.client.Dispatch("Outlook.Application")
     namespace = outlook.GetNamespace("MAPI")
     calendar = namespace.GetDefaultFolder(OL_FOLDER_CALENDAR)
     calendar_items = calendar.Items
 
-    created = 0
-    skipped = 0
+    created: list[Reservation] = []
+    skipped: list[Reservation] = []
     for reservation in reservations:
         subject = _build_subject(reservation)
         start = _to_datetime(reservation, reservation.start_time)
         end = _to_datetime(reservation, reservation.end_time)
 
         if _exists(calendar_items, subject, start):
-            skipped += 1
+            skipped.append(reservation)
             continue
 
         appointment = outlook.CreateItem(OL_APPOINTMENT_ITEM)
@@ -83,6 +83,6 @@ def register_events(reservations: list[Reservation]) -> tuple[int, int]:
         appointment.End = _format_for_outlook(end)
         appointment.ReminderSet = False
         appointment.Save()
-        created += 1
+        created.append(reservation)
 
     return created, skipped

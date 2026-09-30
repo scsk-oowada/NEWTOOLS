@@ -160,7 +160,11 @@ def run() -> None:
         return
 
     created, skipped = register_events(selected)
-    print(f"Outlook予定表に登録しました（新規 {created} 件 / 既存のためスキップ {skipped} 件）。")
+    print(f"Outlook予定表に登録しました（新規 {len(created)} 件 / 既存のためスキップ {len(skipped)} 件）。")
+    if skipped:
+        print("以下の予定は既にOutlook予定表に登録済みのため、スキップしました。")
+        for r in skipped:
+            print(f"  {format_date_jp(r.date)} {r.start_time}-{r.end_time} {r.location} {r.room}")
 
 
 def main() -> None:
