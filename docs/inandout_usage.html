@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>inandout 使い方</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+  .warn {
+    background: #fff7e6;
+    border: 1px solid #f0c36d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 1em 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>inandout 使い方</h1>
+
+<h2>概要</h2>
+<p>SCSKの勤怠システム「SHARE/OTM」の出退勤打刻を自動化するCLIです。SHARE/OTMはメニューの「打刻」をクリックすると、出勤前なら「出勤」画面、退勤前なら「退勤」画面が自動的に表示される仕組みになっているため、このツールは自分で出勤/終業を選ぶのではなく、表示された内容を確認してそのまま打刻します。</p>
+
+<div class="warn">
+SHARE/OTMは社内SSO（Microsoft Entra ID等）でログインするシステムです。このツールはツール専用のブラウザではなく、<strong>普段使っているMicrosoft Edgeのプロファイル</strong>を使って起動することで、SSOログイン済みの状態を引き継ぎます。実行前に、普段使っているEdgeのウィンドウを<strong>すべて終了しておく</strong>必要があります（Edgeのプロファイルは同時に複数のプロセスから使用できないため）。
+</div>
+
+<h2>セットアップ（初回のみ、開発・ビルドを行う場合）</h2>
+<pre>cd /c/ProgramData/NEWTOOLS
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -e ".[dev]"</pre>
+
+<h2>実行方法</h2>
+<pre>source .venv/Scripts/activate
+inandout</pre>
+<p>実行すると、Edgeのプロファイルを使ってブラウザが起動し、SHARE/OTMのメニューから「打刻」を自動的に開きます。打刻対象の日付と区分（出勤/退勤）が表示され、<code>y</code>と答えると理由欄に固定の文言（<code>Claude Code自動打刻</code>）を入れて打刻を確定します。</p>
+<p>前日の退勤など、未処理の打刻が複数残っている場合は、1件ずつ確認しながら処理します。未処理がなくなった時点で終了します。</p>
+
+<h2>実行結果の例</h2>
+<pre>2026-10-16(金) の「退勤」を打刻します。よろしいですか？ (y/n): y
+退勤を打刻しました。
+打刻すべき対象はありません。
+
+完了しました。Enterキーを押すと終了します。</pre>
+
+<h2>補足</h2>
+<ul>
+  <li>SHARE/OTMは画面遷移の正当性をサーバー側で厳しくチェックしているため、URLを直接開く、ブックマークから開く、リロードするといった操作はできません。このツールは必ずメニューの「打刻」リンクをクリックする形で画面を開きます</li>
+  <li>理由欄には固定で「Claude Code自動打刻」という文言が入ります</li>
+  <li>通勤手当の区分は、画面の初期値（対象外）のまま変更しません</li>
+  <li>テスト実行は <code>pytest tests/inandout</code>（SHARE/OTMへの実際のアクセス・ブラウザ操作は含まず、打刻情報の表示整形・Edgeプロファイルのパス解決のみを検証します）</li>
+</ul>
+
+</body>
+</html>

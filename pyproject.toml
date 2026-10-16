@@ -19,6 +19,7 @@ teams-schedule = "newtools.teams_schedule.cli:main"
 file-stats = "newtools.file_stats.cli:main"
 rizab-summary = "newtools.rizab_summary.cli:main"
 mymap-csv = "newtools.mymap_csv.cli:main"
+inandout = "newtools.inandout.cli:main"
 
 [build-system]
 requires = ["setuptools>=68.0"]
