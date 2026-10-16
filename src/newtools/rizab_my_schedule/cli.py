@@ -164,7 +164,10 @@ def run() -> None:
 
     print(f"{config.my_name} さんの予約を {start} から {end} まで取得します...")
     with sync_playwright() as playwright:
-        request_context = playwright.request.new_context()
+        # 社内プロキシ等でSSL通信を検査している環境では、プロキシが発行する証明書を
+        # OSの証明書ストアを使わないAPIRequestContextが信頼できずエラーになるため、
+        # 証明書検証エラーを無視する（りざぶ郎サイトへの通信のみに限定した変更）。
+        request_context = playwright.request.new_context(ignore_https_errors=True)
         html = _login_via_http(request_context, config.group_id, config.password)
         page = _HttpPage(request_context, html)
         reservations = scrape_days(
