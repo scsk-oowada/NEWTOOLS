@@ -9,6 +9,7 @@ import msvcrt
 import os
 import re
 import traceback
+from dataclasses import replace
 from datetime import date, timedelta
 
 from playwright.sync_api import APIRequestContext, sync_playwright
@@ -95,13 +96,14 @@ def _render_selector(reservations: list[Reservation], checked: list[bool], curso
         "　>を矢印キーで動かし、登録する場合はSpaceキーを入力すると登録対象に × が付きます",
         "↑↓:移動  スペース:登録するか切り替え  Enter:確定",
         "",
-        "    日付\t\t時間\t\t会議室",
+        "    日付\t\t時間\t\t会議室\t\t\tタイトル",
     ]
     for i, r in enumerate(reservations):
         pointer = ">" if i == cursor else " "
         box = "[x]" if checked[i] else "[ ]"
+        title = r.subject if r.subject else "(未入力)"
         lines.append(
-            f"{pointer} {box} {format_date_jp(r.date)}\t{r.start_time}-{r.end_time}\t{r.location} {r.room}"
+            f"{pointer} {box} {format_date_jp(r.date)}\t{r.start_time}-{r.end_time}\t{r.location} {r.room}\t{title}"
         )
     return "\n".join(lines)
 
@@ -134,6 +136,26 @@ def _select_reservations(reservations: list[Reservation]) -> list[Reservation]:
     return [r for r, is_checked in zip(reservations, checked) if is_checked]
 
 
+def _prompt_missing_titles(reservations: list[Reservation]) -> list[Reservation]:
+    """タイトル（件名）が未入力の予約について、登録前にタイトルを入力できるようにする。
+
+    空欄のままEnterを押した場合は未入力のまま返す
+    （Outlook登録時は「拠点 会議室名」が件名として使われる）。
+    """
+    updated = []
+    for r in reservations:
+        if r.subject:
+            updated.append(r)
+            continue
+        print(
+            f"{format_date_jp(r.date)} {r.start_time}-{r.end_time} {r.location} {r.room} "
+            "のタイトルが未入力です。"
+        )
+        title = input("タイトルを入力してください（未入力のままでよい場合はEnterのみ): ").strip()
+        updated.append(replace(r, subject=title) if title else r)
+    return updated
+
+
 def run() -> None:
     config = load_or_create_config()
 
@@ -158,6 +180,8 @@ def run() -> None:
     if not selected:
         print("登録する予約が選択されなかったため、登録を中止しました。")
         return
+
+    selected = _prompt_missing_titles(selected)
 
     created, skipped = register_events(selected)
     print(f"Outlook予定表に登録しました（新規 {len(created)} 件 / 既存のためスキップ {len(skipped)} 件）。")

@@ -2,7 +2,13 @@
 
 from datetime import date
 
-from newtools.rizab_my_schedule.cli import _make_should_include, _render_selector
+import pytest
+
+from newtools.rizab_my_schedule.cli import (
+    _make_should_include,
+    _prompt_missing_titles,
+    _render_selector,
+)
 from newtools.rizab_summary.models import Reservation
 
 
@@ -20,7 +26,7 @@ def test_should_include_matches_full_name_reserver():
     assert should_include("大宮 会議室1（6人用）", "大和田圭祐")
 
 
-def _reservation(date_=date(2026, 9, 8), start_time="10:00", end_time="11:00"):
+def _reservation(date_=date(2026, 9, 8), start_time="10:00", end_time="11:00", subject=""):
     return Reservation(
         reserver="矢野",
         date=date_,
@@ -28,6 +34,7 @@ def _reservation(date_=date(2026, 9, 8), start_time="10:00", end_time="11:00"):
         end_time=end_time,
         location="宇都宮",
         room="会議室2（右から2番目）",
+        subject=subject,
     )
 
 
@@ -57,3 +64,39 @@ def test_render_selector_marks_cursor_position():
 
     assert not lines[0].startswith(">")
     assert lines[1].startswith(">")
+
+
+def test_render_selector_shows_title_when_present():
+    table = _render_selector([_reservation(subject="MS113課会")], checked=[True], cursor=0)
+
+    assert "MS113課会" in table
+
+
+def test_render_selector_shows_placeholder_when_title_missing():
+    table = _render_selector([_reservation()], checked=[True], cursor=0)
+
+    assert "(未入力)" in table
+
+
+def test_prompt_missing_titles_keeps_existing_title(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: pytest.fail("入力済みタイトルでは呼ばれないはず"))
+
+    result = _prompt_missing_titles([_reservation(subject="MS113課会")])
+
+    assert result[0].subject == "MS113課会"
+
+
+def test_prompt_missing_titles_applies_entered_title(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "追記したタイトル")
+
+    result = _prompt_missing_titles([_reservation()])
+
+    assert result[0].subject == "追記したタイトル"
+
+
+def test_prompt_missing_titles_keeps_blank_when_not_entered(monkeypatch):
+    monkeypatch.setattr("builtins.input", lambda _: "")
+
+    result = _prompt_missing_titles([_reservation()])
+
+    assert result[0].subject == ""
