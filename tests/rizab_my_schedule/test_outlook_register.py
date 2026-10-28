@@ -33,8 +33,8 @@ def _reservation(subject="", room="会議室2（右から2番目）", location="
     )
 
 
-def test_build_subject_uses_meeting_subject_when_present():
-    assert _build_subject(_reservation(subject="MS113課会")) == "MS113課会"
+def test_build_subject_appends_location_after_meeting_subject():
+    assert _build_subject(_reservation(subject="MS113課会")) == "MS113課会 宇都宮 会議室2（右から2番目）"
 
 
 def test_build_subject_falls_back_to_location_and_room():

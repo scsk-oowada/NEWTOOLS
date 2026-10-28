@@ -15,9 +15,10 @@ def _build_location(reservation: Reservation) -> str:
 
 
 def _build_subject(reservation: Reservation) -> str:
+    location = _build_location(reservation)
     if reservation.subject:
-        return reservation.subject
-    return _build_location(reservation)
+        return f"{reservation.subject} {location}"
+    return location
 
 
 def _to_datetime(reservation: Reservation, time_text: str) -> datetime:
