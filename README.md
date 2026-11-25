@@ -39,3 +39,4 @@ pytest
 - `file-stats` — 指定フォルダ内のファイルを拡張子別に集計するCLI。使い方は [docs/file_stats_usage.html](docs/file_stats_usage.html) を参照。
 - `rizab-summary` — りざぶ郎（宇都宮・大宮の会議室予約）を予約者ごとに集計してTXT出力し、Outlook予定表への登録も行うCLI。使い方は [docs/rizab_summary_usage.html](docs/rizab_summary_usage.html) を参照。
 - `mymap-csv` — 座標リストからGoogle My Maps用のインポートCSVを作成するCLI。使い方は [docs/mymap_csv_usage.html](docs/mymap_csv_usage.html) を参照。
+- `kado-yosoku` — フレックス管理表（Excel）の稼働率履歴から翌月の稼働率を予測するCLI。使い方は [docs/kado_yosoku_usage.html](docs/kado_yosoku_usage.html) を参照。

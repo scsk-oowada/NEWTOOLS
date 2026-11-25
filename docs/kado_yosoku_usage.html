@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>kado-yosoku 使い方</title>
+<style>
+  body {
+    font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 16px;
+    line-height: 1.7;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6em; border-bottom: 2px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #2b6cb0; }
+  code {
+    background: #f0f2f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  pre {
+    background: #1e1e2e;
+    color: #e2e2e2;
+    padding: 14px 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+  th, td {
+    border: 1px solid #d0d5dd;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th { background: #f0f2f5; }
+  ul { padding-left: 1.4em; }
+</style>
+</head>
+<body>
+
+<h1>kado-yosoku 使い方</h1>
+
+<h2>概要</h2>
+<p>フレックス管理表（Excel、月ごとにシートが分かれている勤怠表）を読み込み、従業員ごとの稼働率の推移から翌月の稼働率を線形トレンドで予測するCLIです。</p>
+<p>稼働率は次の式で算出します。</p>
+<pre>稼働率 = (目安時間 + 残業時間（当月）) ÷ 標準総労働時間</pre>
+<ul>
+  <li>目安時間・残業時間は従業員ごとの列（列19・列8）から取得します</li>
+  <li>標準総労働時間（列21）はシート内の全従業員で共通の値です</li>
+</ul>
+
+<h2>セットアップ（初回のみ）</h2>
+<pre>cd /c/ProgramData/NEWTOOLS
+python -m venv .venv
+source .venv/Scripts/activate
+pip install -e ".[dev]"</pre>
+
+<h2>実行方法</h2>
+<pre>source .venv/Scripts/activate
+kado-yosoku 対象ファイル.xlsx</pre>
+
+<h2>オプション</h2>
+<table>
+  <tr><th>オプション</th><th>説明</th><th>デフォルト</th></tr>
+  <tr><td><code>path</code>（位置引数）</td><td>対象のExcelファイル</td><td>（必須）</td></tr>
+  <tr><td><code>--sheets</code></td><td>集計対象シート名をカンマ区切り・時系列順で指定する</td><td><code>8月,9月,10月</code></td></tr>
+  <tr><td><code>--target-label</code></td><td>予測対象月の表示ラベル</td><td><code>11月</code></td></tr>
+  <tr><td><code>--output</code></td><td>予測シートを追加した新しいExcelファイルの保存先。指定すると、直近シート（<code>--sheets</code>の最後）と同じ体裁の新シートを作り、氏名・残業(当月)・目安時間・標準総労働時間の4列のみ予測値で埋めて、<strong>別ファイルとして</strong>保存する。元ファイルは変更しない</td><td>（省略時は画面表示のみ）</td></tr>
+  <tr><td><code>--force</code></td><td><code>--output</code>の保存先が既に存在する場合でも上書きする</td><td>上書きしない</td></tr>
+</table>
+
+<h2>実行例</h2>
+<pre># 既定（8月・9月・10月から11月を予測、画面表示のみ）
+kado-yosoku "M141_ジョイント稼働予測.xlsx"
+
+# 11月シートを追加した新しいファイルを作成する
+kado-yosoku "M141_ジョイント稼働予測.xlsx" --output "M141_ジョイント稼働予測_11月追加.xlsx"
+
+# 翌月（12月）を作る場合は、--sheets と --target-label を1ヶ月分ずらす
+kado-yosoku "M141_ジョイント稼働予測_11月追加.xlsx" --sheets 9月,10月,11月 --target-label 12月 --output "M141_ジョイント稼働予測_12月追加.xlsx"</pre>
+
+<h2>出力例</h2>
+<pre>氏名                8月        9月       10月       11月予測
+杉山　雄太          95.6%     98.4%    100.6%      103.2%
+鈴木　大輔         120.9%    108.7%    116.6%      111.1%
+
+チーム全体の11月平均稼働率予測: 105.0%</pre>
+
+<h2>補足</h2>
+<ul>
+  <li>予測は各従業員の月次稼働率（および残業時間・目安時間・標準総労働時間）に最小二乗法の直線を当てはめ、次の月の値を外挿する方式です</li>
+  <li>対象シートが2つ以下、またはいずれかのシートで同名の従業員が見つからない場合は正しく予測できません</li>
+  <li><code>--output</code>で追加される新シートは、氏名・残業(当月)・目安時間・標準総労働時間の4列のみ予測値が入り、資格や36協定などその他の列は空白になります</li>
+  <li>新シートの右側に残る「氏名＋社員番号」の参考テーブル（コピー元シートの11〜17行目相当）はそのままコピーされるため、必要に応じて手動で確認してください</li>
+  <li>Git Bashで日本語が文字化けする場合は <code>PYTHONIOENCODING=utf-8 kado-yosoku ...</code> のように環境変数を付けて実行してください</li>
+  <li>テスト実行は <code>pytest tests/kado_yosoku</code></li>
+</ul>
+
+</body>
+</html>
